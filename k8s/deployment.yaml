@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cloudnotes
+  labels: { app: cloudnotes }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: cloudnotes }
+  template:
+    metadata:
+      labels: { app: cloudnotes }
+    spec:
+      containers:
+        - name: cloudnotes
+          image: REPLACE_ME/cloudnotes:latest   # CI rewrites this line to the freshly pushed image
+          ports:
+            - containerPort: 3000
+          livenessProbe:  { httpGet: { path: /health, port: 3000 }, periodSeconds: 10 }
+          readinessProbe: { httpGet: { path: /ready,  port: 3000 }, periodSeconds: 5 }
