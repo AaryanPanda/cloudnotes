@@ -2,19 +2,46 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: cloudnotes
-  labels: { app: cloudnotes }
+  labels:
+    app: cloudnotes
 spec:
-  replicas: 1
+  replicas: 2                     # more than 1 → self-healing + rolling updates
   selector:
-    matchLabels: { app: cloudnotes }
+    matchLabels:
+      app: cloudnotes             # Deployment manages pods with this label
   template:
     metadata:
-      labels: { app: cloudnotes }
+      labels:
+        app: cloudnotes           # <-- the Service selector must match THIS
     spec:
       containers:
         - name: cloudnotes
-          image: REPLACE_ME/cloudnotes:latest   # CI rewrites this line to the freshly pushed image
+          # ===> SET THIS to the image you published in Module 3 <===
+          # Docker Hub form:  aaryanpanda/cloudnotes:latest
+          # GHCR form:        ghcr.io/aaryanpanda/cloudnotes:latest
+          image: aaryanpanda/cloudnotes:latest
+          imagePullPolicy: IfNotPresent
           ports:
-            - containerPort: 3000
-          livenessProbe:  { httpGet: { path: /health, port: 3000 }, periodSeconds: 10 }
-          readinessProbe: { httpGet: { path: /ready,  port: 3000 }, periodSeconds: 5 }
+            - containerPort: 8080  # ===> SET to the port your app listens on inside the container
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+          # Optional but professional: proves the app actually serves before
+          # Kubernetes marks the pod Ready / keeps it alive.
+          # If your app has no "/" 200 response, change the path or delete these two blocks.
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 20
